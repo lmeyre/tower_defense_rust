@@ -7,8 +7,8 @@ use rand::Rng;
 
 #[derive(Bundle)]
 pub struct EnemyBundle {
-    movement: Movement,
-    health: Health,
+    pub movement: Movement,
+    pub health: Health,
 }
 
 #[derive(Component)]

@@ -9,9 +9,8 @@ use crate::{
 pub fn spawn_tower(
     mut commands: Commands,
     mut right_click_event: EventReader<RightClickEvent>,
-    mouse_button_input: ResMut<Input<MouseButton>>,
     windows: Query<&Window, With<PrimaryWindow>>,
-    board: Query<(&HexGrid, Entity)>,
+    mut board: Query<(&mut HexGrid, Entity)>,
     tiles: Query<&Tile>,
     game_assets: Res<GameAssets>,
 ) {
@@ -19,7 +18,7 @@ pub fn spawn_tower(
     if right_click_event.iter().last().is_some() {
         if let Ok(windows) = windows.get_single() {
             if let Some(pos) = windows.cursor_position() {
-                if let Ok((grid, board_entity)) = board.get_single() {
+                if let Ok((mut grid, board_entity)) = board.get_single_mut() {
                     let pos = pos - Vec2::new(windows.width(), windows.height()) / 2.0;
 
                     let hex_pos = grid.layout.world_pos_to_hex(pos);
@@ -34,7 +33,7 @@ pub fn spawn_tower(
                                 let tower_entity = commands
                                     .spawn(ColorMesh2dBundle {
                                         mesh: game_assets.square_mesh.clone().into(),
-                                        material: game_assets.tower_material,
+                                        material: game_assets.tower_material.clone(),
                                         transform: Transform {
                                             translation: (Vec3 {
                                                 x: (hex_pos.x as f32),

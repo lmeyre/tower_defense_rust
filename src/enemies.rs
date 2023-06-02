@@ -9,15 +9,14 @@ use crate::{
 };
 
 pub fn spawn_enemies(
-    commands: &mut Commands,
-    materials: Res<GameAssets>,
+    mut commands: Commands,
     time: Res<Time>,
-    mut timer: Query<&EnemiesSpawnTimer>,
+    mut timer: Query<&mut EnemiesSpawnTimer>,
     gameconfig: Res<GameConfig>,
     game_assets: Res<GameAssets>,
     spawners: Query<&Spawner>,
 ) {
-    if let Ok(timer) = timer.get_single_mut() {
+    if let Ok(mut timer) = timer.get_single_mut() {
         if timer.0.tick(time.delta()).finished() {
             return;
         } else {
@@ -27,7 +26,7 @@ pub fn spawn_enemies(
             commands
                 .spawn(ColorMesh2dBundle {
                     mesh: game_assets.circle_mesh.clone().into(),
-                    material: game_assets.enemy_material,
+                    material: game_assets.enemy_material.clone(),
                     transform: Transform {
                         translation: (Vec3 {
                             x: (spawner.hex.x as f32),
@@ -51,8 +50,7 @@ pub fn spawn_enemies(
                             gameconfig.enemies_max_health,
                         ),
                     },
-                })
-                .id();
+                });
         }
     }
 }
