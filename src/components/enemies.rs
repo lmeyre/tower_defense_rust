@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Bundle, Component},
+    prelude::{Bundle, Component, Deref, DerefMut},
     time::Timer,
 };
 use hexx::Hex;
@@ -44,5 +44,5 @@ pub struct Spawner {
     pub hex: Hex,
 }
 
-#[derive(Debug, Component)]
+#[derive(Debug, Component, Deref, DerefMut)]
 pub struct EnemiesSpawnTimer(pub Timer);

@@ -14,7 +14,6 @@ pub fn spawn_tower(
     tiles: Query<&Tile>,
     game_assets: Res<GameAssets>,
 ) {
-    //Check if valid -> not on another tower / not goal / not spawn
     if right_click_event.iter().last().is_some() {
         if let Ok(windows) = windows.get_single() {
             if let Some(pos) = windows.cursor_position() {
@@ -59,7 +58,6 @@ pub fn spawn_tower(
 
 pub fn on_tower_spawned(new_towers: Query<&Tower>) {
 
-    //Somehow get tiles around  -> spiral range
-    //Put Damage on each tiles
-    // Should put damage tile on tiles around here, or its on this feature i must do a reaction from other system that listen to this ?
+    //Somehow get tiles around
+    //Put Damage on each tiles -> If no component, add it, if there is one, just increment the value
 }

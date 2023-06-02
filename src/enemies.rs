@@ -17,10 +17,10 @@ pub fn spawn_enemies(
     spawners: Query<&Spawner>,
 ) {
     if let Ok(mut timer) = timer.get_single_mut() {
-        if timer.0.tick(time.delta()).finished() {
+        if timer.tick(time.delta()).finished() {
             return;
         } else {
-            timer.0.reset();
+            timer.reset();
         }
         for spawner in spawners.iter() {
             commands
@@ -51,6 +51,15 @@ pub fn spawn_enemies(
                         ),
                     },
                 });
+        }
+    }
+}
+
+//Do i have to call Changed<Health> AND Health ?
+pub fn on_damage_taken(mut commands: Commands, damaged: Query<(&Health, Entity), Changed<Health>>) {
+    for (health, entity) in damaged.iter() {
+        if health.health <= 0 {
+            commands.entity(entity).despawn();
         }
     }
 }

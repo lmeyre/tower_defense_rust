@@ -22,48 +22,47 @@ pub fn display_ui(
         ui.end_row();
         ui.label("Enemies configuration");
 
-        {
-            let enemies_min_health = game_config.enemies_min_health;
-            let enemies_max_health = game_config.enemies_max_health;
+        let enemies_min_health = game_config.enemies_min_health;
+        let enemies_max_health = game_config.enemies_max_health;
 
-            let enemies_min_speed = game_config.enemies_min_speed;
-            let enemies_max_speed = game_config.enemies_max_speed;
+        let enemies_min_speed = game_config.enemies_min_speed;
+        let enemies_max_speed = game_config.enemies_max_speed;
 
-            egui::Grid::new("EnemiesConfig").show(ui, |ui| {
-                slider_widget(ui, "Spawn Rate", &mut game_config.spawn_rate, 1..=10);
-                ui.end_row();
-                slider_widget(
-                    ui,
-                    "Min health",
-                    &mut game_config.enemies_min_health,
-                    1..=enemies_max_health,
-                );
-                ui.end_row();
-                slider_widget(
-                    ui,
-                    "Max health",
-                    &mut game_config.enemies_max_health,
-                    enemies_min_health..=100,
-                );
-                ui.end_row();
+        egui::Grid::new("EnemiesConfig").show(ui, |ui| {
+            slider_widget(ui, "Spawn Rate", &mut game_config.spawn_rate, 1..=10);
+            ui.end_row();
+            slider_widget(
+                ui,
+                "Min health",
+                &mut game_config.enemies_min_health,
+                1..=enemies_max_health,
+            );
+            ui.end_row();
+            slider_widget(
+                ui,
+                "Max health",
+                &mut game_config.enemies_max_health,
+                enemies_min_health..=100,
+            );
+            ui.end_row();
 
-                ui.end_row();
-                slider_widget(
-                    ui,
-                    "Min speed",
-                    &mut game_config.enemies_min_speed,
-                    0.1..=enemies_max_speed,
-                );
-                ui.end_row();
-                slider_widget(
-                    ui,
-                    "Max speed",
-                    &mut game_config.enemies_max_speed,
-                    enemies_min_speed..=10.,
-                );
-                ui.end_row();
-            });
-        }
+            ui.end_row();
+            slider_widget(
+                ui,
+                "Min speed",
+                &mut game_config.enemies_min_speed,
+                0.1..=enemies_max_speed,
+            );
+            ui.end_row();
+            slider_widget(
+                ui,
+                "Max speed",
+                &mut game_config.enemies_max_speed,
+                enemies_min_speed..=10.,
+            );
+            ui.end_row();
+        });
+
         ui.end_row();
         ui.label("Tower configuration");
         egui::Grid::new("TowerConfig").show(ui, |ui| {

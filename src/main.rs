@@ -10,6 +10,13 @@ mod enemies;
 mod initialize;
 mod towers;
 
+//TODO
+//Spawners positions
+//Enemies path
+//Enemies movement
+//Communication Channels
+//Recreate board
+
 pub fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -32,6 +39,7 @@ pub fn main() {
         .add_system(input::handle_input)
         .add_system(towers::spawn_tower)
         .add_system(enemies::spawn_enemies)
+        .add_system(grid::damage_entities)
         .add_system(ui::display_ui)
         .run();
 }

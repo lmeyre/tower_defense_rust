@@ -7,7 +7,7 @@ pub struct Tile {
 
 #[derive(Component)]
 pub struct DamageArea {
-    pub damage: u32,
+    pub damage: i32,
 }
 
 pub enum TileType {
