@@ -1,7 +1,6 @@
 use bevy::{
     prelude::{Handle, Mesh, Resource},
     sprite::ColorMaterial,
-    time::Timer,
 };
 use hexx::Vec2;
 
@@ -26,8 +25,8 @@ impl Default for MapConfig {
 pub struct GameConfig {
     // Enemies
     pub spawn_rate: u64,
-    pub enemies_min_health: i32,
-    pub enemies_max_health: i32,
+    pub enemies_min_health: u32,
+    pub enemies_max_health: u32,
 
     pub enemies_min_speed: f32,
     pub enemies_max_speed: f32,

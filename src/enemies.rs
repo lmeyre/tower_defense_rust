@@ -1,10 +1,7 @@
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::prelude::*;
 
 use crate::{
-    components::{
-        enemies::{EnemiesSpawnTimer, EnemyBundle, Health, Movement, Spawner},
-        tiles,
-    },
+    components::enemies::{EnemiesSpawnTimer, Enemy, EnemyBundle, Health, Movement, Spawner},
     resources::{GameAssets, GameConfig},
 };
 
@@ -50,15 +47,15 @@ pub fn spawn_enemies(
                             gameconfig.enemies_max_health,
                         ),
                     },
+                    enemy: Enemy {},
                 });
         }
     }
 }
 
-//Do i have to call Changed<Health> AND Health ?
 pub fn on_damage_taken(mut commands: Commands, damaged: Query<(&Health, Entity), Changed<Health>>) {
     for (health, entity) in damaged.iter() {
-        if health.health <= 0 {
+        if health.health == 0 {
             commands.entity(entity).despawn();
         }
     }

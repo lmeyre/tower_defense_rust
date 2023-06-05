@@ -1,9 +1,13 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 
 use crate::{
-    components::{hexgrid::HexGrid, tiles::Tile, towers::Tower},
+    components::{
+        hexgrid::HexGrid,
+        tiles::{DamageArea, Tile},
+        towers::Tower,
+    },
     input::RightClickEvent,
-    resources::GameAssets,
+    resources::{GameAssets, GameConfig},
 };
 
 pub fn spawn_tower(
@@ -56,8 +60,30 @@ pub fn spawn_tower(
     }
 }
 
-pub fn on_tower_spawned(new_towers: Query<&Tower>) {
-
-    //Somehow get tiles around
-    //Put Damage on each tiles -> If no component, add it, if there is one, just increment the value
+pub fn on_tower_spawned(
+    mut commands: Commands,
+    new_towers: Query<&Tower, Added<Tower>>,
+    mut damage_tiles: Query<&mut DamageArea>,
+    game_config: Res<GameConfig>,
+    grid: Query<&HexGrid>,
+) {
+    if let Ok(grid) = grid.get_single() {
+        for tower in new_towers.iter() {
+            tower
+                .hex
+                .spiral_range(0..=game_config.tower_range)
+                .map(|h| {
+                    if let Some(hex_entity) = grid.tiles_entities.get(&h) {
+                        if !damage_tiles.contains(*hex_entity) {
+                            commands
+                                .entity(*hex_entity)
+                                .insert(DamageArea { damage: 0 });
+                        }
+                        if let Ok(mut damage_tile) = damage_tiles.get_mut(*hex_entity) {
+                            damage_tile.damage += game_config.tower_damage;
+                        }
+                    }
+                });
+        }
+    }
 }

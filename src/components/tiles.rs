@@ -7,7 +7,7 @@ pub struct Tile {
 
 #[derive(Component)]
 pub struct DamageArea {
-    pub damage: i32,
+    pub damage: u32,
 }
 
 pub enum TileType {
@@ -28,9 +28,6 @@ impl TileType {
     }
 
     pub fn is_valid_spawn(&self) -> bool {
-        match self {
-            TileType::Spawner | TileType::Goal => false,
-            _ => true,
-        }
+        !matches!(self, TileType::Spawner | TileType::Goal)
     }
 }

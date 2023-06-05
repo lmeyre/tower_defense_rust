@@ -42,7 +42,7 @@ pub fn initialize(
     commands.spawn(EnemiesSpawnTimer(timer));
 }
 
-pub fn get_hexagonal_mesh(hex_size: Vec2) -> Mesh {
+fn get_hexagonal_mesh(hex_size: Vec2) -> Mesh {
     let mesh_info = PlaneMeshBuilder::new(&HexLayout {
         hex_size,
         ..default()

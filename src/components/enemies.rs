@@ -9,11 +9,12 @@ use rand::Rng;
 pub struct EnemyBundle {
     pub movement: Movement,
     pub health: Health,
+    pub enemy: Enemy,
 }
 
 #[derive(Component)]
 pub struct Health {
-    pub health: i32,
+    pub health: u32,
 }
 
 #[derive(Component)]
@@ -21,8 +22,11 @@ pub struct Movement {
     pub speed: f32,
 }
 
+#[derive(Component)]
+pub struct Enemy {}
+
 impl Health {
-    pub fn get_random_health(min: i32, max: i32) -> i32 {
+    pub fn get_random_health(min: u32, max: u32) -> u32 {
         let mut rng = rand::thread_rng();
         rng.gen_range(min..=max)
     }
