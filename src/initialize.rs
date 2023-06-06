@@ -7,7 +7,7 @@ use bevy::{
 use hexx::*;
 
 use crate::{
-    components::enemies::EnemiesSpawnTimer,
+    components::{enemies::EnemiesSpawnTimer, towers::TowerAttackTimer},
     resources::{GameAssets, GameConfig, MapConfig},
 };
 
@@ -40,6 +40,8 @@ pub fn initialize(
         TimerMode::Repeating,
     );
     commands.spawn(EnemiesSpawnTimer(timer));
+    let timer = Timer::new(Duration::from_secs(1), TimerMode::Repeating);
+    commands.spawn(TowerAttackTimer(timer));
 }
 
 fn get_hexagonal_mesh(hex_size: Vec2) -> Mesh {

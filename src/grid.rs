@@ -1,11 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    components::{
-        enemies::{Health, Spawner},
-        hexgrid::HexGrid,
-        tiles::*,
-    },
+    components::{enemies::Spawner, hexgrid::HexGrid, tiles::*},
     resources::GameAssets,
 };
 use bevy::prelude::*;
@@ -109,29 +105,6 @@ pub fn setup_spawners(
                             tile.tile_type = TileType::Spawner;
                         }
                     }
-                }
-            }
-        }
-    }
-}
-
-// Deal damage to entities
-pub fn damage_entities(
-    mut entities: Query<(&mut Health, &Transform)>,
-    damaging_tiles: Query<(&DamageArea, &Tile, Entity)>,
-    grid: Query<&HexGrid>,
-) {
-    for (mut health, position) in entities.iter_mut() {
-        if let Ok(grid) = grid.get_single() {
-            // Getting the hex entity at the position of the enemy
-            let hex = grid.layout.world_pos_to_hex(Vec2 {
-                x: position.translation.x,
-                y: position.translation.y,
-            });
-            if let Some(tile_entity) = grid.tiles_entities.get(&hex) {
-                // If it carry damage, apply it
-                if let Ok((damaging_tile, _, _)) = damaging_tiles.get(*tile_entity) {
-                    health.health = health.health.saturating_sub(damaging_tile.damage);
                 }
             }
         }

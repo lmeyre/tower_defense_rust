@@ -38,7 +38,7 @@ pub struct GameConfig {
 impl Default for GameConfig {
     fn default() -> Self {
         Self {
-            spawn_rate: 1,
+            spawn_rate: 2,
             enemies_min_health: 5,
             enemies_max_health: 20,
             enemies_min_speed: 0.2,

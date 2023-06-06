@@ -13,6 +13,13 @@ mod terrain;
 mod towers;
 mod visual;
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash, States, Default)]
+pub enum AppState {
+    #[default]
+    Starting,
+    Running,
+}
+
 //TODO
 //Communication Channels
 //Recreate board
@@ -37,27 +44,46 @@ pub fn main() {
         .add_startup_systems(
             (
                 initialize::initialize,
-                apply_system_buffers,
+                // apply_system_buffers,
+                // grid::setup_grid,
+                // apply_system_buffers,
+                // grid::setup_spawners,
+                // apply_system_buffers,
+                // enemies::on_spawner_created,
+            )
+                .chain(),
+        )
+        .add_startup_system(camera::setup_camera)
+        // State
+        .add_state::<AppState>()
+        // Starting systems
+        .add_systems(
+            (
                 grid::setup_grid,
                 apply_system_buffers,
                 grid::setup_spawners,
                 apply_system_buffers,
                 enemies::on_spawner_created,
             )
-                .chain(),
+                .chain()
+                .in_schedule(OnEnter(AppState::Starting)),
         )
-        .add_startup_system(camera::setup_camera)
-        // Runtime Systems
-        .add_system(input::handle_input)
-        .add_system(towers::spawn_tower)
-        .add_system(enemies::spawn_enemies)
-        .add_system(grid::damage_entities)
-        .add_system(ui::display_ui)
-        .add_system(visual::on_tile_type_changed)
-        .add_system(towers::on_tower_spawned)
-        .add_system(enemies::refresh_spawners_path)
-        .add_system(terrain::change_terrain)
-        .add_system(enemies::move_enemies)
-        .add_system(enemies::on_damage_taken)
+        // Runnings Systems
+        .add_systems(
+            (
+                input::handle_input,
+                towers::spawn_tower,
+                enemies::spawn_enemies,
+                towers::damage_entities,
+                ui::display_ui,
+                visual::on_tile_type_changed,
+                towers::on_tower_spawned,
+                enemies::refresh_spawners_path,
+                terrain::change_terrain,
+                enemies::move_enemies,
+                enemies::on_damage_taken,
+            )
+                .in_set(OnUpdate(AppState::Running)),
+        )
         .run();
 }

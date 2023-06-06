@@ -5,6 +5,8 @@ use bevy::{
 use hexx::Hex;
 use rand::Rng;
 
+use crate::resources::GameConfig;
+
 #[derive(Bundle)]
 pub struct EnemyBundle {
     pub movement: Movement,
@@ -33,8 +35,18 @@ impl Health {
         rng.gen_range(min..=max)
     }
 
-    pub fn get_size(&self) -> u32 {
-        0
+    pub fn get_size(&self, game_config: &GameConfig) -> f32 {
+        let health_range = game_config.enemies_min_health..=game_config.enemies_max_health;
+        let size_range = 3..=10;
+
+        let normalized_position = (self.health - health_range.start()) as f32
+            / (health_range.end() - health_range.start()) as f32;
+
+        let size = (normalized_position * (size_range.end() - size_range.start()) as f32
+            + *size_range.start() as f32)
+            .round() as i32;
+
+        size.clamp(*size_range.start(), *size_range.end()) as f32 //remove ?
     }
 }
 
@@ -44,6 +56,9 @@ impl Movement {
         rng.gen_range(min..=max)
     }
 }
+
+#[derive(Component)]
+pub struct TilePath {}
 
 #[derive(Component)]
 pub struct Spawner {

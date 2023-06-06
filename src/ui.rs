@@ -6,12 +6,16 @@ use bevy_egui::{
     EguiContexts,
 };
 
-use crate::resources::{GameConfig, MapConfig};
+use crate::{
+    resources::{GameConfig, MapConfig},
+    AppState,
+};
 
 pub fn display_ui(
     mut context: EguiContexts,
     mut map_config: ResMut<MapConfig>,
     mut game_config: ResMut<GameConfig>,
+    mut state: ResMut<NextState<AppState>>,
 ) {
     egui::Window::new("Game Configuration").show(context.ctx_mut(), |ui| {
         ui.label("Map configuration");
@@ -73,7 +77,7 @@ pub fn display_ui(
         });
 
         if ui.add(egui::Button::new("Regenerate Board")).clicked() {
-            //Do something
+            state.set(AppState::Starting);
         }
     });
 

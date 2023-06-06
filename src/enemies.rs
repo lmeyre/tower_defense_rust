@@ -3,7 +3,7 @@ use hexx::{algorithms::a_star, Hex};
 
 use crate::{
     components::{
-        enemies::{EnemiesSpawnTimer, Enemy, EnemyBundle, Health, Movement, Spawner},
+        enemies::{EnemiesSpawnTimer, Enemy, EnemyBundle, Health, Movement, Spawner, TilePath},
         hexgrid::HexGrid,
         tiles::Tile,
     },
@@ -14,54 +14,73 @@ pub fn spawn_enemies(
     mut commands: Commands,
     time: Res<Time>,
     mut timer: Query<&mut EnemiesSpawnTimer>,
-    gameconfig: Res<GameConfig>,
+    game_config: Res<GameConfig>,
     game_assets: Res<GameAssets>,
     spawners: Query<&Spawner>,
+    grid: Query<&HexGrid>,
 ) {
     if let Ok(mut timer) = timer.get_single_mut() {
         if timer.tick(time.delta()).finished() {
-            return;
-        } else {
             timer.reset();
-        }
-        for spawner in spawners.iter() {
-            commands
-                .spawn(ColorMesh2dBundle {
-                    mesh: game_assets.circle_mesh.clone().into(),
-                    material: game_assets.enemy_material.clone(),
-                    transform: Transform {
-                        translation: (Vec3 {
-                            x: (spawner.hex.x as f32),
-                            y: (spawner.hex.y as f32),
-                            z: (0.),
-                        }),
-                        ..default()
-                    },
-                    ..default()
-                })
-                .insert(EnemyBundle {
-                    movement: Movement {
-                        speed: Movement::get_random_speed(
-                            gameconfig.enemies_min_speed,
-                            gameconfig.enemies_max_speed,
-                        ),
-                        spawner_hex: spawner.hex,
-                        current_target: *spawner.path.get(0).unwrap(),
-                    },
-                    health: Health {
+            if let Ok(grid) = grid.get_single() {
+                for spawner in spawners.iter() {
+                    let health: Health = Health {
                         health: Health::get_random_health(
-                            gameconfig.enemies_min_health,
-                            gameconfig.enemies_max_health,
+                            game_config.enemies_min_health,
+                            game_config.enemies_max_health,
                         ),
-                    },
-                    enemy: Enemy {},
-                });
+                    };
+                    let size = health.get_size(game_config.as_ref());
+                    let position = grid.layout.hex_to_world_pos(spawner.hex);
+                    commands
+                        .spawn(ColorMesh2dBundle {
+                            mesh: game_assets.circle_mesh.clone().into(),
+                            material: game_assets.enemy_material.clone(),
+                            transform: Transform {
+                                translation: (Vec3 {
+                                    x: (position.x),
+                                    y: (position.y),
+                                    z: (0.3),
+                                }),
+                                scale: Vec3 {
+                                    x: size,
+                                    y: size,
+                                    z: size,
+                                },
+                                ..default()
+                            },
+                            ..default()
+                        })
+                        .insert(EnemyBundle {
+                            movement: Movement {
+                                speed: Movement::get_random_speed(
+                                    game_config.enemies_min_speed,
+                                    game_config.enemies_max_speed,
+                                ),
+                                spawner_hex: spawner.hex,
+                                current_target: *spawner.path.get(0).unwrap(),
+                            },
+                            health,
+                            enemy: Enemy {},
+                        });
+                }
+            }
         }
     }
 }
 
-pub fn on_damage_taken(mut commands: Commands, damaged: Query<(&Health, Entity), Changed<Health>>) {
-    for (health, entity) in damaged.iter() {
+pub fn on_damage_taken(
+    mut commands: Commands,
+    mut damaged: Query<(&Health, Entity, &mut Transform), Changed<Health>>,
+    game_config: Res<GameConfig>,
+) {
+    for (health, entity, mut transform) in damaged.iter_mut() {
+        let size = health.get_size(game_config.as_ref());
+        transform.scale = Vec3 {
+            x: size,
+            y: size,
+            z: size,
+        };
         if health.health == 0 {
             commands.entity(entity).despawn();
         }
@@ -113,11 +132,16 @@ pub fn move_enemies(
 }
 
 pub fn refresh_spawners_path(
+    mut commands: Commands,
     tiles: Query<&Tile, Changed<Tile>>,
     mut spawners: Query<&mut Spawner>,
     grid: Query<&HexGrid>,
+    tiles_path: Query<(&TilePath, Entity)>,
 ) {
     if let Ok(grid) = grid.get_single() {
+        for (_, entity) in tiles_path.iter() {
+            commands.entity(entity).remove::<TilePath>();
+        }
         for mut spawner in spawners.iter_mut() {
             if let Some(path) = a_star(spawner.hex, Hex::ZERO, |hex| {
                 if let Some(entity) = grid.tiles_entities.get(&hex) {
@@ -130,6 +154,11 @@ pub fn refresh_spawners_path(
                     None
                 }
             }) {
+                for spawner_path_tile in path.clone() {
+                    if let Some(entity) = grid.tiles_entities.get(&spawner_path_tile) {
+                        commands.entity(*entity).insert(TilePath {});
+                    }
+                }
                 spawner.path = path;
             }
         }
