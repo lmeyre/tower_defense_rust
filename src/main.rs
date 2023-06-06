@@ -39,11 +39,14 @@ pub fn main() {
                 initialize::initialize,
                 apply_system_buffers,
                 grid::setup_grid,
+                apply_system_buffers,
+                grid::setup_spawners,
+                apply_system_buffers,
+                enemies::on_spawner_created,
             )
                 .chain(),
         )
         .add_startup_system(camera::setup_camera)
-        .add_startup_system(grid::setup_spawners)
         // Runtime Systems
         .add_system(input::handle_input)
         .add_system(towers::spawn_tower)
@@ -54,5 +57,7 @@ pub fn main() {
         .add_system(towers::on_tower_spawned)
         .add_system(enemies::refresh_spawners_path)
         .add_system(terrain::change_terrain)
+        .add_system(enemies::move_enemies)
+        .add_system(enemies::on_damage_taken)
         .run();
 }

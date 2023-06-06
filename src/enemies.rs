@@ -1,4 +1,4 @@
-use bevy::{prelude::*, time};
+use bevy::prelude::*;
 use hexx::{algorithms::a_star, Hex};
 
 use crate::{
@@ -73,6 +73,7 @@ pub fn move_enemies(
     mut enemies: Query<(&mut Movement, &mut Transform, Entity)>,
     grid: Query<&HexGrid>,
     spawners: Query<&Spawner>,
+    time: Res<Time>,
 ) {
     //Enemies will look where they are in the path of their spawner
     //They will have a target hex, once distance is small, they go to the next
@@ -106,7 +107,7 @@ pub fn move_enemies(
             }
             //Move the entites
             let translation = &mut transform.translation;
-            *translation = translation.lerp(target_pos, movement.speed); // * time.delta_seconds()); -> TO IMPLEMENT
+            *translation = translation.lerp(target_pos, movement.speed * time.delta_seconds());
         }
     }
 }
@@ -134,3 +135,51 @@ pub fn refresh_spawners_path(
         }
     }
 }
+
+pub fn on_spawner_created(
+    tiles: Query<&Tile>,
+    mut spawners: Query<&mut Spawner, Added<Spawner>>,
+    grid: Query<&HexGrid>,
+) {
+    if let Ok(grid) = grid.get_single() {
+        for mut spawner in spawners.iter_mut() {
+            if let Some(path) = a_star(spawner.hex, Hex::ZERO, |hex| {
+                if let Some(entity) = grid.tiles_entities.get(&hex) {
+                    if let Ok(tile) = tiles.get(*entity) {
+                        Some(tile.tile_type.get_cost())
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }) {
+                spawner.path = path;
+            }
+        }
+    }
+}
+
+// fn process_spawners_path(
+//     tiles: &Query<&Tile>,
+//     spawners: &mut Query<&mut Spawner>,
+//     grid: &Query<&HexGrid>,
+// ) {
+//     if let Ok(grid) = grid.get_single() {
+//         for mut spawner in spawners.iter_mut() {
+//             if let Some(path) = a_star(spawner.hex, Hex::ZERO, |hex| {
+//                 if let Some(entity) = grid.tiles_entities.get(&hex) {
+//                     if let Ok(tile) = tiles.get(*entity) {
+//                         Some(tile.tile_type.get_cost())
+//                     } else {
+//                         None
+//                     }
+//                 } else {
+//                     None
+//                 }
+//             }) {
+//                 spawner.path = path;
+//             }
+//         }
+//     }
+// }

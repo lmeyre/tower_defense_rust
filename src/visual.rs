@@ -7,8 +7,9 @@ use crate::{
 
 pub fn on_tile_type_changed(
     game_assets: ResMut<GameAssets>,
-    mut entities: Query<(&mut Handle<ColorMaterial>, &Tile), Or<(Changed<Tile>, Added<Tile>)>>,
+    mut entities: Query<(&mut Handle<ColorMaterial>, &Tile), Changed<Tile>>,
 ) {
+    //info!("Number of elements in query: {}", entities.iter().count());
     for (mut material, tile) in entities.iter_mut() {
         let mat = match tile.tile_type {
             TileType::Clear => game_assets.clear_tile_material.clone(),
