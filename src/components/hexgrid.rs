@@ -8,7 +8,8 @@ pub struct HexGrid {
     pub tiles_entities: HashMap<Hex, Entity>,
     pub layout: HexLayout,
     pub selected_hex: Hex,
-    pub tower_hexs: HashMap<Hex, Entity>,
+    pub tower_entities: HashMap<Hex, Entity>,
+    pub spawner_entities: HashMap<Hex, Entity>,
 }
 
 pub struct Path;

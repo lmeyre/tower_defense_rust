@@ -31,7 +31,7 @@ pub fn spawn_tower(
                         let tile = tiles.get(*tile_entity);
                         if let Ok(t) = tile {
                             if t.tile_type.is_valid_spawn()
-                                && !grid.tower_hexs.contains_key(&hex_pos)
+                                && !grid.tower_entities.contains_key(&hex_pos)
                             {
                                 let tower_entity = commands
                                     .spawn(ColorMesh2dBundle {
@@ -50,7 +50,7 @@ pub fn spawn_tower(
                                     .insert(Tower { hex: hex_pos })
                                     .set_parent(board_entity)
                                     .id();
-                                grid.tower_hexs.insert(hex_pos, tower_entity);
+                                grid.tower_entities.insert(hex_pos, tower_entity);
                             }
                         }
                     }
@@ -72,7 +72,7 @@ pub fn on_tower_spawned(
             tower
                 .hex
                 .spiral_range(0..=game_config.tower_range)
-                .map(|h| {
+                .for_each(|h| {
                     if let Some(hex_entity) = grid.tiles_entities.get(&h) {
                         if !damage_tiles.contains(*hex_entity) {
                             commands

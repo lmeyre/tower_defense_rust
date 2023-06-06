@@ -20,6 +20,8 @@ pub struct Health {
 #[derive(Component)]
 pub struct Movement {
     pub speed: f32,
+    pub spawner_hex: Hex,
+    pub current_target: Hex,
 }
 
 #[derive(Component)]
@@ -46,6 +48,7 @@ impl Movement {
 #[derive(Component)]
 pub struct Spawner {
     pub hex: Hex,
+    pub path: Vec<Hex>,
 }
 
 #[derive(Debug, Component, Deref, DerefMut)]

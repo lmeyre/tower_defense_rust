@@ -1,7 +1,12 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, time};
+use hexx::{algorithms::a_star, Hex};
 
 use crate::{
-    components::enemies::{EnemiesSpawnTimer, Enemy, EnemyBundle, Health, Movement, Spawner},
+    components::{
+        enemies::{EnemiesSpawnTimer, Enemy, EnemyBundle, Health, Movement, Spawner},
+        hexgrid::HexGrid,
+        tiles::Tile,
+    },
     resources::{GameAssets, GameConfig},
 };
 
@@ -40,6 +45,8 @@ pub fn spawn_enemies(
                             gameconfig.enemies_min_speed,
                             gameconfig.enemies_max_speed,
                         ),
+                        spawner_hex: spawner.hex,
+                        current_target: *spawner.path.get(0).unwrap(),
                     },
                     health: Health {
                         health: Health::get_random_health(
@@ -57,6 +64,73 @@ pub fn on_damage_taken(mut commands: Commands, damaged: Query<(&Health, Entity),
     for (health, entity) in damaged.iter() {
         if health.health == 0 {
             commands.entity(entity).despawn();
+        }
+    }
+}
+
+pub fn move_enemies(
+    mut commands: Commands,
+    mut enemies: Query<(&mut Movement, &mut Transform, Entity)>,
+    grid: Query<&HexGrid>,
+    spawners: Query<&Spawner>,
+) {
+    //Enemies will look where they are in the path of their spawner
+    //They will have a target hex, once distance is small, they go to the next
+    if let Ok(grid) = grid.get_single() {
+        for (mut movement, mut transform, entity) in enemies.iter_mut() {
+            let target_pos = grid
+                .layout
+                .hex_to_world_pos(movement.current_target)
+                .extend(0.);
+            let distance = transform.translation.distance(target_pos);
+            // Change target when tile is reached
+            if distance < 1. {
+                // If goal is reached
+                if movement.current_target == Hex::ZERO {
+                    commands.entity(entity).despawn();
+                } else if let Some(spawner_entity) =
+                    grid.spawner_entities.get(&movement.spawner_hex)
+                {
+                    if let Ok(spawner) = spawners.get(*spawner_entity) {
+                        if let Some(index) = spawner
+                            .path
+                            .iter()
+                            .position(|x| *x == movement.current_target)
+                        {
+                            if let Some(next_hex) = spawner.path.get(index + 1) {
+                                movement.current_target = *next_hex;
+                            }
+                        }
+                    }
+                }
+            }
+            //Move the entites
+            let translation = &mut transform.translation;
+            *translation = translation.lerp(target_pos, movement.speed); // * time.delta_seconds()); -> TO IMPLEMENT
+        }
+    }
+}
+
+pub fn refresh_spawners_path(
+    tiles: Query<&Tile, Changed<Tile>>,
+    mut spawners: Query<&mut Spawner>,
+    grid: Query<&HexGrid>,
+) {
+    if let Ok(grid) = grid.get_single() {
+        for mut spawner in spawners.iter_mut() {
+            if let Some(path) = a_star(spawner.hex, Hex::ZERO, |hex| {
+                if let Some(entity) = grid.tiles_entities.get(&hex) {
+                    if let Ok(tile) = tiles.get(*entity) {
+                        Some(tile.tile_type.get_cost())
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }) {
+                spawner.path = path;
+            }
         }
     }
 }

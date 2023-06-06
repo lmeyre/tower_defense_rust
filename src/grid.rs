@@ -8,12 +8,12 @@ use crate::{
     },
     resources::GameAssets,
 };
-use bevy::prelude::*;
-use hexx::{DiagonalDirection, Hex, HexLayout};
+use bevy::prelude::{system_adapter::new, *};
+use hexx::{algorithms::a_star, DiagonalDirection, Hex, HexLayout};
 use rand::Rng;
 
 use crate::resources::MapConfig;
-
+// START UP SYSTEM
 pub fn setup_grid(
     map_config: ResMut<MapConfig>,
     mut commands: Commands,
@@ -39,15 +39,9 @@ pub fn setup_grid(
         .map(|(_i, coord)| {
             let tile_type = get_random_tile_type(rng.gen_range(0..=1));
             let pos = layout.hex_to_world_pos(coord);
-            // let material = match tile_type {
-            //     TileType::Clear => game_assets.clear_tile_material.clone(),
-            //     TileType::Blocked => game_assets.blocked_tile_material.clone(),
-            //     _ => unreachable!(),
-            // };
             let entity: Entity = commands
                 .spawn(ColorMesh2dBundle {
                     mesh: game_assets.bestagone_mesh.clone().into(),
-                    //material,
                     transform: Transform::from_xyz(pos.x, pos.y, 0.0).with_scale(Vec3::splat(1.)),
                     ..default()
                 })
@@ -70,7 +64,8 @@ pub fn setup_grid(
         tiles_entities,
         layout,
         selected_hex: Hex::ZERO,
-        tower_hexs: HashMap::new(),
+        tower_entities: HashMap::new(),
+        spawner_entities: HashMap::new(),
     });
 }
 
@@ -85,16 +80,24 @@ fn get_random_tile_type(random: u8) -> TileType {
 pub fn setup_spawners(
     mut commands: Commands,
     map_config: ResMut<MapConfig>,
-    grid: Query<&HexGrid>,
+    mut grid: Query<(&mut HexGrid, Entity)>,
 ) {
     let mut rng = rand::thread_rng();
-    if let Ok(grid) = grid.get_single() {
+    if let Ok((mut grid, board_entity)) = grid.get_single_mut() {
         for direction in DiagonalDirection::ALL_DIRECTIONS {
             let hex_iterator = Hex::ZERO.ring_edge(map_config.map_radius, direction);
             let index = rng.gen_range(0..hex_iterator.len());
-            if let Some(spawner) = hex_iterator.skip(index).next() {
-                if let Some(entity) = grid.tiles_entities.get(&spawner) {
-                    commands.entity(*entity).insert(Spawner { hex: spawner });
+            if let Some(spawner_hex) = hex_iterator.skip(index).next() {
+                if let Some(entity) = grid.tiles_entities.get(&spawner_hex) {
+                    let spawner_id = commands
+                        .entity(*entity)
+                        .insert(Spawner {
+                            hex: spawner_hex,
+                            path: Vec::new(),
+                        })
+                        .set_parent(board_entity)
+                        .id();
+                    grid.spawner_entities.insert(spawner_hex, spawner_id);
                 }
             }
         }

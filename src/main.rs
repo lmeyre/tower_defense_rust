@@ -14,8 +14,6 @@ mod towers;
 mod visual;
 
 //TODO
-//Enemies path
-//Enemies movement
 //Communication Channels
 //Recreate board
 
@@ -47,12 +45,14 @@ pub fn main() {
         .add_startup_system(camera::setup_camera)
         .add_startup_system(grid::setup_spawners)
         // Runtime Systems
-        .add_system(visual::on_tile_type_changed)
         .add_system(input::handle_input)
         .add_system(towers::spawn_tower)
         .add_system(enemies::spawn_enemies)
         .add_system(grid::damage_entities)
         .add_system(ui::display_ui)
+        .add_system(visual::on_tile_type_changed)
+        .add_system(towers::on_tower_spawned)
+        .add_system(enemies::refresh_spawners_path)
         .add_system(terrain::change_terrain)
         .run();
 }

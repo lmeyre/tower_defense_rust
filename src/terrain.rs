@@ -11,9 +11,10 @@ use crate::{
 pub fn change_terrain(
     mut left_click_event: EventReader<LeftClickEvent>,
     windows: Query<&Window, With<PrimaryWindow>>,
-    mut board: Query<(&mut HexGrid)>,
+    mut board: Query<&mut HexGrid>,
     mut tiles: Query<&mut Tile>,
 ) {
+    info!("Modifying terrain");
     if left_click_event.iter().last().is_some() {
         if let Ok(windows) = windows.get_single() {
             if let Some(pos) = windows.cursor_position() {
