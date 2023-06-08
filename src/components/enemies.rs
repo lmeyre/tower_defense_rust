@@ -36,7 +36,10 @@ impl Health {
     }
 
     pub fn get_size(&self, game_config: &GameConfig) -> f32 {
-        let health_range = game_config.enemies_min_health..=game_config.enemies_max_health;
+        if self.health == 0 {
+            return 0.;
+        }
+        let health_range = 0..=game_config.enemies_max_health;
         let size_range = 3..=10;
 
         let normalized_position = (self.health - health_range.start()) as f32
@@ -56,9 +59,6 @@ impl Movement {
         rng.gen_range(min..=max)
     }
 }
-
-#[derive(Component)]
-pub struct TilePath {}
 
 #[derive(Component)]
 pub struct Spawner {

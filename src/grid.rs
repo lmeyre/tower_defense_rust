@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::{
     components::{enemies::Spawner, hexgrid::HexGrid, tiles::*},
     resources::GameAssets,
+    AppState,
 };
 use bevy::prelude::*;
 use hexx::{DiagonalDirection, Hex, HexLayout};
@@ -41,7 +42,10 @@ pub fn setup_grid(
                     transform: Transform::from_xyz(pos.x, pos.y, 0.0).with_scale(Vec3::splat(1.)),
                     ..default()
                 })
-                .insert(Tile { tile_type })
+                .insert(Tile {
+                    tile_type,
+                    is_path: false,
+                })
                 .set_parent(board_entity)
                 .id();
             (coord, entity)
@@ -56,6 +60,7 @@ pub fn setup_grid(
         })
         .insert(Tile {
             tile_type: TileType::Goal,
+            is_path: false,
         })
         .set_parent(board_entity)
         .id();
@@ -83,6 +88,7 @@ pub fn setup_spawners(
     map_config: ResMut<MapConfig>,
     mut grid: Query<(&mut HexGrid, Entity)>,
     mut tiles: Query<&mut Tile>,
+    mut state: ResMut<NextState<AppState>>,
 ) {
     let mut rng = rand::thread_rng();
     if let Ok((mut grid, board_entity)) = grid.get_single_mut() {
@@ -109,4 +115,5 @@ pub fn setup_spawners(
             }
         }
     }
+    state.set(AppState::Running);
 }

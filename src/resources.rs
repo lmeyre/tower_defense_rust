@@ -62,4 +62,5 @@ pub struct GameAssets {
     pub blocked_tile_material: Handle<ColorMaterial>,
     pub spawner_tile_material: Handle<ColorMaterial>,
     pub goal_tile_material: Handle<ColorMaterial>,
+    pub path_tile_material: Handle<ColorMaterial>,
 }

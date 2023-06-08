@@ -106,7 +106,6 @@ pub fn damage_entities(
     if let Ok(mut timer) = timer.get_single_mut() {
         if timer.tick(time.delta()).finished() {
             timer.reset();
-            info!("FIRE !");
             for (mut health, position) in entities.iter_mut() {
                 if let Ok(grid) = grid.get_single() {
                     // Getting the hex entity at the position of the enemy
@@ -118,10 +117,7 @@ pub fn damage_entities(
                     if let Some(tile_entity) = grid.tiles_entities.get(&hex) {
                         // If it carry damage, apply it to the enemy
                         if let Ok(damaging_tile) = damaging_tiles.get(*tile_entity) {
-                            info!("Before {}", health.health);
-                            info!("Before {}", damaging_tile.damage);
                             health.health = health.health.saturating_sub(damaging_tile.damage);
-                            info!("After {}", health.health);
                         }
                     }
                 }

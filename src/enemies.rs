@@ -1,9 +1,13 @@
+use std::collections::HashMap;
+
+use bevy::ecs::world;
 use bevy::prelude::*;
 use hexx::{algorithms::a_star, Hex};
 
+use crate::components::tiles::TilePath;
 use crate::{
     components::{
-        enemies::{EnemiesSpawnTimer, Enemy, EnemyBundle, Health, Movement, Spawner, TilePath},
+        enemies::{EnemiesSpawnTimer, Enemy, EnemyBundle, Health, Movement, Spawner},
         hexgrid::HexGrid,
         tiles::Tile,
     },
@@ -75,18 +79,23 @@ pub fn on_damage_taken(
     game_config: Res<GameConfig>,
 ) {
     for (health, entity, mut transform) in damaged.iter_mut() {
+        if health.health == 0 {
+            commands.entity(entity).despawn();
+            continue;
+        }
+
         let size = health.get_size(game_config.as_ref());
         transform.scale = Vec3 {
             x: size,
             y: size,
             z: size,
         };
-        if health.health == 0 {
-            commands.entity(entity).despawn();
-        }
     }
 }
 
+// Could make them update their position if path are updated
+// Not complicated but will take more time again
+// I dont feel like it's necessary, can add it if needed
 pub fn move_enemies(
     mut commands: Commands,
     mut enemies: Query<(&mut Movement, &mut Transform, Entity)>,
@@ -131,19 +140,24 @@ pub fn move_enemies(
     }
 }
 
-pub fn refresh_spawners_path(
+pub fn update_paths(
     mut commands: Commands,
-    tiles: Query<&Tile, Changed<Tile>>,
     mut spawners: Query<&mut Spawner>,
     grid: Query<&HexGrid>,
-    tiles_path: Query<(&TilePath, Entity)>,
+    tiles_path: Query<(&TilePath, Entity, &Tile)>,
+    changed_tiles: Query<Changed<Tile>>,
+    tiles: Query<&Tile>,
 ) {
+    if changed_tiles.is_empty() {
+        return;
+    }
+
     if let Ok(grid) = grid.get_single() {
-        for (_, entity) in tiles_path.iter() {
+        for (_, entity, _) in tiles_path.iter() {
             commands.entity(entity).remove::<TilePath>();
         }
         for mut spawner in spawners.iter_mut() {
-            if let Some(path) = a_star(spawner.hex, Hex::ZERO, |hex| {
+            if let Some(mut path) = a_star(spawner.hex, Hex::ZERO, |hex| {
                 if let Some(entity) = grid.tiles_entities.get(&hex) {
                     if let Ok(tile) = tiles.get(*entity) {
                         Some(tile.tile_type.get_cost())
@@ -154,6 +168,7 @@ pub fn refresh_spawners_path(
                     None
                 }
             }) {
+                path.remove(0);
                 for spawner_path_tile in path.clone() {
                     if let Some(entity) = grid.tiles_entities.get(&spawner_path_tile) {
                         commands.entity(*entity).insert(TilePath {});
@@ -165,40 +180,54 @@ pub fn refresh_spawners_path(
     }
 }
 
-pub fn on_spawner_created(
-    tiles: Query<&Tile>,
-    mut spawners: Query<&mut Spawner, Added<Spawner>>,
-    grid: Query<&HexGrid>,
+// Workaround, this is probably the biggest problem that I had on the project
+// I had to make a ParamSet to stop crash and conflicts in the Query
+// But making so made me unable to give the tiles to the function used by a_star
+// Since it didnt wanted it to be mut (But I had no choice of having the paramset mut)
+// Became a rabbit hole where I tried more and more fix, then more fix to fix problems created by said "fixs"
+// In the end I just did the HashMap on Benoit's advices even tho its kinda brute force
+// Interested which path i should have taken
+
+pub fn post_update_paths(
+    mut tiles: ParamSet<(Query<(&TilePath, Entity, &mut Tile)>, Query<Changed<Tile>>)>,
 ) {
-    if let Ok(grid) = grid.get_single() {
-        for mut spawner in spawners.iter_mut() {
-            if let Some(path) = a_star(spawner.hex, Hex::ZERO, |hex| {
-                if let Some(entity) = grid.tiles_entities.get(&hex) {
-                    if let Ok(tile) = tiles.get(*entity) {
-                        Some(tile.tile_type.get_cost())
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            }) {
-                spawner.path = path;
-            }
-        }
+    if tiles.p1().is_empty() {
+        return;
+    }
+    for (_, _, mut tile) in tiles.p0().iter_mut() {
+        tile.is_path = false;
     }
 }
 
-// fn process_spawners_path(
-//     tiles: &Query<&Tile>,
-//     spawners: &mut Query<&mut Spawner>,
-//     grid: &Query<&HexGrid>,
+pub fn on_tile_path_updated(mut tiles: Query<&mut Tile, Added<TilePath>>) {
+    for mut tile in tiles.iter_mut() {
+        tile.is_path = true;
+    }
+}
+
+// pub fn update_paths(
+//     mut commands: Commands,
+//     mut spawners: Query<&mut Spawner>,
+//     grid: Query<&HexGrid>,
+//     mut tiles: ParamSet<(
+//         Query<(&TilePath, Entity, &mut Tile)>,
+//         Query<Changed<Tile>>,
+//         Query<&Tile>,
+//     )>,
 // ) {
+//     if tiles.p1().is_empty() {
+//         return;
+//     }
+
 //     if let Ok(grid) = grid.get_single() {
+//         for (_, entity, mut tile) in tiles.p0().iter_mut() {
+//             commands.entity(entity).remove::<TilePath>();
+//             tile.is_path = false;
+//         }
 //         for mut spawner in spawners.iter_mut() {
-//             if let Some(path) = a_star(spawner.hex, Hex::ZERO, |hex| {
+//             if let Some(mut path) = a_star(spawner.hex, Hex::ZERO, |hex| {
 //                 if let Some(entity) = grid.tiles_entities.get(&hex) {
-//                     if let Ok(tile) = tiles.get(*entity) {
+//                     if let Ok(tile) = tiles.p2().get(*entity) {
 //                         Some(tile.tile_type.get_cost())
 //                     } else {
 //                         None
@@ -207,6 +236,12 @@ pub fn on_spawner_created(
 //                     None
 //                 }
 //             }) {
+//                 path.remove(0);
+//                 for spawner_path_tile in path.clone() {
+//                     if let Some(entity) = grid.tiles_entities.get(&spawner_path_tile) {
+//                         commands.entity(*entity).insert(TilePath {});
+//                     }
+//                 }
 //                 spawner.path = path;
 //             }
 //         }

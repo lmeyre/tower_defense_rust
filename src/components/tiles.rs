@@ -1,15 +1,20 @@
 use bevy::prelude::Component;
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Tile {
     pub tile_type: TileType,
+    pub is_path: bool,
 }
+
+#[derive(Component)]
+pub struct TilePath {}
 
 #[derive(Component)]
 pub struct DamageArea {
     pub damage: u32,
 }
 
+#[derive(Clone)]
 pub enum TileType {
     Clear,
     Blocked,

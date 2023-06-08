@@ -5,13 +5,21 @@ mod resources;
 mod ui;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
+use channel::{write_channel, ChannelTD};
+//use channel::ChannelTDPlugin;
 use input::{LeftClickEvent, RightClickEvent};
+mod channel;
 pub mod components;
 mod enemies;
 mod initialize;
 mod terrain;
 mod towers;
 mod visual;
+use crossbeam_channel::*;
+
+// crash
+// channel
+// restart
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, States, Default)]
 pub enum AppState {
@@ -20,11 +28,8 @@ pub enum AppState {
     Running,
 }
 
-//TODO
-//Communication Channels
-//Recreate board
-
 pub fn main() {
+    let (tx, rx) = unbounded();
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -33,6 +38,8 @@ pub fn main() {
             }),
             ..default()
         }))
+        .insert_resource(ChannelTD { receiver: rx })
+        //.add_plugin(ChannelTDPlugin)
         .add_plugin(EguiPlugin)
         //Events
         .add_event::<LeftClickEvent>()
@@ -56,29 +63,39 @@ pub fn main() {
         .add_startup_system(camera::setup_camera)
         // State
         .add_state::<AppState>()
-        // Starting systems
+        // General systems
+        .add_systems(
+            (
+                enemies::update_paths,
+                enemies::post_update_paths,
+                enemies::on_tile_path_updated,
+            )
+                .chain(),
+        )
+        // Starting State systems
         .add_systems(
             (
                 grid::setup_grid,
                 apply_system_buffers,
                 grid::setup_spawners,
                 apply_system_buffers,
-                enemies::on_spawner_created,
+                enemies::update_paths,
             )
                 .chain()
                 .in_schedule(OnEnter(AppState::Starting)),
         )
-        // Runnings Systems
+        // Running State Systems
         .add_systems(
             (
+                channel::listen_channel,
                 input::handle_input,
+                enemies::update_paths,
+                visual::on_tile_type_changed,
                 towers::spawn_tower,
                 enemies::spawn_enemies,
                 towers::damage_entities,
                 ui::display_ui,
-                visual::on_tile_type_changed,
                 towers::on_tower_spawned,
-                enemies::refresh_spawners_path,
                 terrain::change_terrain,
                 enemies::move_enemies,
                 enemies::on_damage_taken,
@@ -86,4 +103,8 @@ pub fn main() {
                 .in_set(OnUpdate(AppState::Running)),
         )
         .run();
+
+    std::thread::spawn(move || {
+        write_channel(tx);
+    });
 }

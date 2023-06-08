@@ -29,6 +29,7 @@ pub fn initialize(
         blocked_tile_material: materials.add(Color::DARK_GRAY.into()),
         spawner_tile_material: materials.add(Color::RED.into()),
         goal_tile_material: materials.add(Color::BLUE.into()),
+        path_tile_material: materials.add(Color::ORANGE.into()),
         tower_material: materials.add(Color::GREEN.into()),
         enemy_material: materials.add(Color::PURPLE.into()),
     };
