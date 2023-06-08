@@ -21,12 +21,12 @@ pub fn spawn_enemies(
     game_config: Res<GameConfig>,
     game_assets: Res<GameAssets>,
     spawners: Query<&Spawner>,
-    grid: Query<&HexGrid>,
+    grid: Query<(&HexGrid, Entity)>,
 ) {
     if let Ok(mut timer) = timer.get_single_mut() {
         if timer.tick(time.delta()).finished() {
             timer.reset();
-            if let Ok(grid) = grid.get_single() {
+            if let Ok((grid, board_entity)) = grid.get_single() {
                 for spawner in spawners.iter() {
                     let health: Health = Health {
                         health: Health::get_random_health(
@@ -66,7 +66,8 @@ pub fn spawn_enemies(
                             },
                             health,
                             enemy: Enemy {},
-                        });
+                        })
+                        .set_parent(board_entity);
                 }
             }
         }
@@ -141,25 +142,23 @@ pub fn move_enemies(
 }
 
 pub fn update_paths(
-    mut commands: Commands,
     mut spawners: Query<&mut Spawner>,
     grid: Query<&HexGrid>,
-    tiles_path: Query<(&TilePath, Entity, &Tile)>,
+    mut tiles: Query<(&mut TilePath, &Tile)>,
     changed_tiles: Query<Changed<Tile>>,
-    tiles: Query<&Tile>,
 ) {
     if changed_tiles.is_empty() {
         return;
     }
 
     if let Ok(grid) = grid.get_single() {
-        for (_, entity, _) in tiles_path.iter() {
-            commands.entity(entity).remove::<TilePath>();
+        for (mut path, _) in tiles.iter_mut() {
+            path.is_path = false;
         }
         for mut spawner in spawners.iter_mut() {
             if let Some(mut path) = a_star(spawner.hex, Hex::ZERO, |hex| {
                 if let Some(entity) = grid.tiles_entities.get(&hex) {
-                    if let Ok(tile) = tiles.get(*entity) {
+                    if let Ok((_, tile)) = tiles.get(*entity) {
                         Some(tile.tile_type.get_cost())
                     } else {
                         None
@@ -171,7 +170,9 @@ pub fn update_paths(
                 path.remove(0);
                 for spawner_path_tile in path.clone() {
                     if let Some(entity) = grid.tiles_entities.get(&spawner_path_tile) {
-                        commands.entity(*entity).insert(TilePath {});
+                        if let Ok((mut path, _)) = tiles.get_mut(*entity) {
+                            path.is_path = true;
+                        }
                     }
                 }
                 spawner.path = path;
@@ -188,22 +189,24 @@ pub fn update_paths(
 // In the end I just did the HashMap on Benoit's advices even tho its kinda brute force
 // Interested which path i should have taken
 
-pub fn post_update_paths(
-    mut tiles: ParamSet<(Query<(&TilePath, Entity, &mut Tile)>, Query<Changed<Tile>>)>,
-) {
-    if tiles.p1().is_empty() {
-        return;
-    }
-    for (_, _, mut tile) in tiles.p0().iter_mut() {
-        tile.is_path = false;
-    }
-}
+// pub fn pre_update_paths(
+//     mut tiles: ParamSet<(Query<(&TilePath, Entity, &mut Tile)>, Query<Changed<Tile>>)>,
+// ) {
+//     if tiles.p1().is_empty() {
+//         return;
+//     }
+//     for (_, _, mut tile) in tiles.p0().iter_mut() {
+//         info!("Setting tile to false");
+//         tile.is_path = false;
+//     }
+// }
 
-pub fn on_tile_path_updated(mut tiles: Query<&mut Tile, Added<TilePath>>) {
-    for mut tile in tiles.iter_mut() {
-        tile.is_path = true;
-    }
-}
+// pub fn on_tile_path_updated(mut tiles: Query<&mut Tile, Added<TilePath>>) {
+//     for mut tile in tiles.iter_mut() {
+//         info!("Setting tile to true");
+//         tile.is_path = true;
+//     }
+// }
 
 // pub fn update_paths(
 //     mut commands: Commands,

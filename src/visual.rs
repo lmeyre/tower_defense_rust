@@ -7,20 +7,39 @@ use crate::{
 
 pub fn on_tile_type_changed(
     game_assets: ResMut<GameAssets>,
-    mut entities: Query<(&mut Handle<ColorMaterial>, &Tile, Entity), Changed<Tile>>,
-    tiles_path: Query<&TilePath>,
+    mut entities: Query<
+        (&mut Handle<ColorMaterial>, &Tile, &TilePath, Entity),
+        Or<(Changed<Tile>, Changed<TilePath>)>,
+    >,
 ) {
-    for (mut material, tile, entity) in entities.iter_mut() {
-        let mat = if tiles_path.contains(entity) {
+    for (mut material, tile, path, _) in entities.iter_mut() {
+        let mat = if tile.tile_type == TileType::Goal {
+            game_assets.goal_tile_material.clone()
+        } else if tile.tile_type == TileType::Spawner {
+            game_assets.spawner_tile_material.clone()
+        } else if path.is_path {
             game_assets.path_tile_material.clone()
+        } else if tile.tile_type == TileType::Clear {
+            game_assets.clear_tile_material.clone()
         } else {
-            match tile.tile_type {
-                TileType::Clear => game_assets.clear_tile_material.clone(),
-                TileType::Blocked => game_assets.blocked_tile_material.clone(),
-                TileType::Spawner => game_assets.spawner_tile_material.clone(),
-                TileType::Goal => game_assets.goal_tile_material.clone(),
-            }
+            game_assets.blocked_tile_material.clone()
         };
+
+        // I had this at first, but I didnt find a way to handle weird priority
+        // About the fact that the path goes after some of the enum value, but not some
+        // Couldnt match on the tile itself
+
+        // let mat = if tiles_path.contains(entity) {
+        //     game_assets.path_tile_material.clone()
+        // } else {
+        //     match tile.tile_type {
+        //         TileType::Clear => game_assets.clear_tile_material.clone(),
+        //         TileType::Blocked => game_assets.blocked_tile_material.clone(),
+        //         TileType::Spawner => game_assets.spawner_tile_material.clone(),
+        //         TileType::Goal => game_assets.goal_tile_material.clone(),
+        //     }
+        // };
+
         *material = mat;
     }
 }

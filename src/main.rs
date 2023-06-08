@@ -67,8 +67,8 @@ pub fn main() {
         .add_systems(
             (
                 enemies::update_paths,
-                enemies::post_update_paths,
-                enemies::on_tile_path_updated,
+                // enemies::pre_update_paths,
+                // enemies::on_tile_path_updated,
             )
                 .chain(),
         )

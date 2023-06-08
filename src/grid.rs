@@ -10,12 +10,17 @@ use hexx::{DiagonalDirection, Hex, HexLayout};
 use rand::Rng;
 
 use crate::resources::MapConfig;
-// START UP SYSTEM
+
 pub fn setup_grid(
     map_config: ResMut<MapConfig>,
     mut commands: Commands,
     game_assets: ResMut<GameAssets>,
+    grid: Query<(&HexGrid, Entity)>,
 ) {
+    if let Ok((_, board_entity)) = grid.get_single() {
+        commands.entity(board_entity).despawn_recursive();
+    }
+
     let layout = HexLayout {
         hex_size: map_config.hex_size,
         ..default()
@@ -42,10 +47,8 @@ pub fn setup_grid(
                     transform: Transform::from_xyz(pos.x, pos.y, 0.0).with_scale(Vec3::splat(1.)),
                     ..default()
                 })
-                .insert(Tile {
-                    tile_type,
-                    is_path: false,
-                })
+                .insert(Tile { tile_type })
+                .insert(TilePath { is_path: false })
                 .set_parent(board_entity)
                 .id();
             (coord, entity)
@@ -60,8 +63,8 @@ pub fn setup_grid(
         })
         .insert(Tile {
             tile_type: TileType::Goal,
-            is_path: false,
         })
+        .insert(TilePath { is_path: false })
         .set_parent(board_entity)
         .id();
     tiles_entities.insert(Hex::ZERO, origin);
