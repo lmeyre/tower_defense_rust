@@ -23,7 +23,7 @@ pub struct Health {
 pub struct Movement {
     pub speed: f32,
     pub spawner_hex: Hex,
-    pub current_target: Hex,
+    pub current_target_index: usize,
 }
 
 #[derive(Component)]

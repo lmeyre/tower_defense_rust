@@ -1,6 +1,3 @@
-use std::collections::HashMap;
-
-use bevy::ecs::world;
 use bevy::prelude::*;
 use hexx::{algorithms::a_star, Hex};
 
@@ -62,7 +59,8 @@ pub fn spawn_enemies(
                                     game_config.enemies_max_speed,
                                 ),
                                 spawner_hex: spawner.hex,
-                                current_target: *spawner.path.get(0).unwrap(),
+                                //current_target: *spawner.path.get(0).unwrap(),
+                                current_target_index: 0,
                             },
                             health,
                             enemy: Enemy {},
@@ -108,35 +106,28 @@ pub fn move_enemies(
     //They will have a target hex, once distance is small, they go to the next
     if let Ok(grid) = grid.get_single() {
         for (mut movement, mut transform, entity) in enemies.iter_mut() {
-            let target_pos = grid
-                .layout
-                .hex_to_world_pos(movement.current_target)
-                .extend(0.);
-            let distance = transform.translation.distance(target_pos);
-            // Change target when tile is reached
-            if distance < 1. {
-                // If goal is reached
-                if movement.current_target == Hex::ZERO {
-                    commands.entity(entity).despawn();
-                } else if let Some(spawner_entity) =
-                    grid.spawner_entities.get(&movement.spawner_hex)
-                {
-                    if let Ok(spawner) = spawners.get(*spawner_entity) {
-                        if let Some(index) = spawner
-                            .path
-                            .iter()
-                            .position(|x| *x == movement.current_target)
-                        {
-                            if let Some(next_hex) = spawner.path.get(index + 1) {
-                                movement.current_target = *next_hex;
+            if let Some(spawner_entity) = grid.spawner_entities.get(&movement.spawner_hex) {
+                if let Ok(spawner) = spawners.get(*spawner_entity) {
+                    if let Some(target_hex) = spawner.path.get(movement.current_target_index) {
+                        let target_pos = grid.layout.hex_to_world_pos(*target_hex).extend(0.);
+                        let distance = transform.translation.distance(target_pos);
+                        // Change target when tile is reached
+                        if distance < 1. {
+                            // If goal is reached
+                            if *target_hex == Hex::ZERO {
+                                commands.entity(entity).despawn();
+                            } else {
+                                movement.current_target_index += 1;
                             }
                         }
+
+                        //Move the entites
+                        let translation = &mut transform.translation;
+                        *translation =
+                            translation.lerp(target_pos, movement.speed * time.delta_seconds());
                     }
                 }
             }
-            //Move the entites
-            let translation = &mut transform.translation;
-            *translation = translation.lerp(target_pos, movement.speed * time.delta_seconds());
         }
     }
 }
