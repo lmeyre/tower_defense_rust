@@ -30,6 +30,10 @@ pub enum AppState {
 
 pub fn main() {
     let (tx, rx) = unbounded();
+
+    std::thread::spawn(move || {
+        write_channel(tx);
+    });
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -39,7 +43,6 @@ pub fn main() {
             ..default()
         }))
         .insert_resource(ChannelTD { receiver: rx })
-        //.add_plugin(ChannelTDPlugin)
         .add_plugin(EguiPlugin)
         //Events
         .add_event::<LeftClickEvent>()
@@ -48,18 +51,7 @@ pub fn main() {
         .init_resource::<resources::MapConfig>()
         .init_resource::<resources::GameConfig>()
         // Startup Systems
-        .add_startup_systems(
-            (
-                initialize::initialize,
-                // apply_system_buffers,
-                // grid::setup_grid,
-                // apply_system_buffers,
-                // grid::setup_spawners,
-                // apply_system_buffers,
-                // enemies::on_spawner_created,
-            )
-                .chain(),
-        )
+        .add_startup_systems((initialize::initialize,).chain())
         .add_startup_system(camera::setup_camera)
         // State
         .add_state::<AppState>()
@@ -103,8 +95,4 @@ pub fn main() {
                 .in_set(OnUpdate(AppState::Running)),
         )
         .run();
-
-    std::thread::spawn(move || {
-        write_channel(tx);
-    });
 }

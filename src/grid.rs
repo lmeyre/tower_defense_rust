@@ -35,16 +35,21 @@ pub fn setup_grid(
         })
         .id();
 
-    let mut tiles_entities: HashMap<_, _> = Hex::ZERO
-        .spiral_range(1..=map_config.map_radius)
+    let tiles_entities: HashMap<_, _> = Hex::ZERO
+        .spiral_range(0..=map_config.map_radius)
         .enumerate()
         .map(|(_i, coord)| {
-            let tile_type = get_random_tile_type(rng.gen_range(0..=1));
+            let tile_type = if coord == Hex::ZERO {
+                TileType::Goal
+            } else {
+                get_random_tile_type(rng.gen_range(0..=1))
+            };
             let pos = layout.hex_to_world_pos(coord);
             let entity: Entity = commands
                 .spawn(ColorMesh2dBundle {
                     mesh: game_assets.bestagone_mesh.clone().into(),
-                    transform: Transform::from_xyz(pos.x, pos.y, 0.0).with_scale(Vec3::splat(1.)),
+                    transform: Transform::from_xyz(pos.x, pos.y, 0.0).with_scale(Vec3::splat(0.95)),
+                    // No material here :)
                     ..default()
                 })
                 .insert(Tile { tile_type })
@@ -54,20 +59,6 @@ pub fn setup_grid(
             (coord, entity)
         })
         .collect();
-
-    let origin: Entity = commands
-        .spawn(ColorMesh2dBundle {
-            mesh: game_assets.bestagone_mesh.clone().into(),
-            transform: Transform::from_xyz(0., 0., 0.0).with_scale(Vec3::splat(1.)),
-            ..default()
-        })
-        .insert(Tile {
-            tile_type: TileType::Goal,
-        })
-        .insert(TilePath { is_path: false })
-        .set_parent(board_entity)
-        .id();
-    tiles_entities.insert(Hex::ZERO, origin);
 
     commands.entity(board_entity).insert(HexGrid {
         tiles_entities,

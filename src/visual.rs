@@ -5,6 +5,7 @@ use crate::{
     resources::GameAssets,
 };
 
+#[allow(clippy::type_complexity)]
 pub fn on_tile_type_changed(
     game_assets: ResMut<GameAssets>,
     mut entities: Query<
@@ -12,6 +13,8 @@ pub fn on_tile_type_changed(
         Or<(Changed<Tile>, Changed<TilePath>)>,
     >,
 ) {
+    // Less clean, didnt find an optimal way to do that.
+
     for (mut material, tile, path, _) in entities.iter_mut() {
         let mat = if tile.tile_type == TileType::Goal {
             game_assets.goal_tile_material.clone()

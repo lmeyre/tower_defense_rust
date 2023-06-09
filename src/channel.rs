@@ -3,6 +3,8 @@ use std::{io::stdin, thread, time::Duration};
 use bevy::prelude::*;
 use crossbeam_channel::*;
 
+use crate::AppState;
+
 #[derive(Debug, Resource)]
 pub struct ChannelTD {
     pub receiver: Receiver<String>,
@@ -16,16 +18,17 @@ pub fn write_channel(sender: Sender<String>) {
             thread::sleep(Duration::from_millis(1000));
             continue;
         }
-        if buff == "test" {
-            sender.try_send(String::from("yay"));
+        let buff = buff.trim();
+        if buff == "restart" && sender.try_send(String::from("restart")).is_ok() {
+            // Happyness
         }
     }
 }
 
-pub fn listen_channel(receiver: Res<ChannelTD>) {
+pub fn listen_channel(receiver: Res<ChannelTD>, mut state: ResMut<NextState<AppState>>) {
     if !receiver.receiver.is_empty() {
-        while let Ok(msg) = receiver.receiver.try_recv() {
-            info!("YAYYY");
+        while receiver.receiver.try_recv().is_ok() {
+            state.set(AppState::Starting);
         }
     }
 }

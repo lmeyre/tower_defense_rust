@@ -59,7 +59,6 @@ pub fn spawn_enemies(
                                     game_config.enemies_max_speed,
                                 ),
                                 spawner_hex: spawner.hex,
-                                //current_target: *spawner.path.get(0).unwrap(),
                                 current_target_index: 0,
                             },
                             health,
@@ -76,19 +75,23 @@ pub fn on_damage_taken(
     mut commands: Commands,
     mut damaged: Query<(&Health, Entity, &mut Transform), Changed<Health>>,
     game_config: Res<GameConfig>,
+    grid: Query<Entity, With<HexGrid>>,
 ) {
-    for (health, entity, mut transform) in damaged.iter_mut() {
-        if health.health == 0 {
-            commands.entity(entity).despawn();
-            continue;
-        }
+    if let Ok(board) = grid.get_single() {
+        for (health, entity, mut transform) in damaged.iter_mut() {
+            if health.health == 0 {
+                commands.entity(board).remove_children(&[entity]);
+                commands.entity(entity).despawn();
+                continue;
+            }
 
-        let size = health.get_size(game_config.as_ref());
-        transform.scale = Vec3 {
-            x: size,
-            y: size,
-            z: size,
-        };
+            let size = health.get_size(game_config.as_ref());
+            transform.scale = Vec3 {
+                x: size,
+                y: size,
+                z: size,
+            };
+        }
     }
 }
 
@@ -109,12 +112,14 @@ pub fn move_enemies(
             if let Some(spawner_entity) = grid.spawner_entities.get(&movement.spawner_hex) {
                 if let Ok(spawner) = spawners.get(*spawner_entity) {
                     if let Some(target_hex) = spawner.path.get(movement.current_target_index) {
+                        // => TODO
                         let target_pos = grid.layout.hex_to_world_pos(*target_hex).extend(0.);
                         let distance = transform.translation.distance(target_pos);
                         // Change target when tile is reached
                         if distance < 1. {
                             // If goal is reached
                             if *target_hex == Hex::ZERO {
+                                //commands.entity(board).remove_children(&[entity]); => TODO
                                 commands.entity(entity).despawn();
                             } else {
                                 movement.current_target_index += 1;
